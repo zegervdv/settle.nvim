@@ -31,18 +31,27 @@ M.use_2 = function()
   return use_diff(M.remote)
 end
 
+M.close = function()
+  if M.opts.post_hook ~= nil then
+    M.opts.post_hook()
+  end
+  vim.cmd [[ wqa ]]
+end
+
 M.start = function()
   -- Set default options
   vim.opt.wrap = M.opts.wrap
 
-  -- unbind dirvish (or other file explorers)
-  vim.api.nvim_del_keymap('n', '-')
+  if M.opts.pre_hook ~= nil then
+    M.opts.pre_hook()
+  end
 
   -- splice compatible mappings
   vim.api.nvim_set_keymap('n', '-n', ']c', { silent = true })
   vim.api.nvim_set_keymap('n', '-N', '[c', { silent = true })
   vim.api.nvim_set_keymap('n', '-u1', ':MergeUse1<cr>', { silent = true })
   vim.api.nvim_set_keymap('n', '-u2', ':MergeUse2<cr>', { silent = true })
+  vim.api.nvim_set_keymap('n', '-q', ':MergeClose<cr>', { silent = true })
 
   local buffers = vim.api.nvim_list_bufs()
 
@@ -109,6 +118,7 @@ M.setup = function(opts)
   vim.api.nvim_add_user_command('MergeInit', M.start, {})
   vim.api.nvim_add_user_command('MergeUse1', M.use_1, {})
   vim.api.nvim_add_user_command('MergeUse2', M.use_2, {})
+  vim.api.nvim_add_user_command('MergeClose', M.close, {})
 end
 
 return M
