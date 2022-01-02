@@ -46,13 +46,6 @@ M.start = function()
     M.opts.pre_hook()
   end
 
-  -- splice compatible mappings
-  vim.api.nvim_set_keymap('n', '-n', ']c', { silent = true })
-  vim.api.nvim_set_keymap('n', '-N', '[c', { silent = true })
-  vim.api.nvim_set_keymap('n', '-u1', ':MergeUse1<cr>', { silent = true })
-  vim.api.nvim_set_keymap('n', '-u2', ':MergeUse2<cr>', { silent = true })
-  vim.api.nvim_set_keymap('n', '-q', ':MergeClose<cr>', { silent = true })
-
   local buffers = vim.api.nvim_list_bufs()
 
   M.base.buffer = buffers[1]
@@ -119,6 +112,13 @@ M.setup = function(opts)
   vim.api.nvim_add_user_command('MergeUse1', M.use_1, {})
   vim.api.nvim_add_user_command('MergeUse2', M.use_2, {})
   vim.api.nvim_add_user_command('MergeClose', M.close, {})
+
+  -- splice compatible mappings
+  vim.api.nvim_set_keymap('n', '-n', ']c', { silent = true })
+  vim.api.nvim_set_keymap('n', '-N', '[c', { silent = true })
+  vim.api.nvim_set_keymap('n', '-u1', '', { silent = true, callback = M.use_1, desc = 'Use changes from 1 (local)' })
+  vim.api.nvim_set_keymap('n', '-u2', '', { silent = true, callback = M.use_2, desc = 'Use changes from 2 (remote)' })
+  vim.api.nvim_set_keymap('n', '-q', '', { silent = true, callback = M.close, desc = 'Save all changes and close' })
 end
 
 return M
