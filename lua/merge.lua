@@ -108,10 +108,10 @@ M.setup = function(opts)
     end
   end
 
-  vim.api.nvim_add_user_command('MergeInit', M.start, {})
-  vim.api.nvim_add_user_command('MergeUse1', M.use_1, {})
-  vim.api.nvim_add_user_command('MergeUse2', M.use_2, {})
-  vim.api.nvim_add_user_command('MergeClose', M.close, {})
+  vim.api.nvim_create_user_command('MergeInit', M.start, {})
+  vim.api.nvim_create_user_command('MergeUse1', M.use_1, {})
+  vim.api.nvim_create_user_command('MergeUse2', M.use_2, {})
+  vim.api.nvim_create_user_command('MergeClose', M.close, {})
 
   -- splice compatible mappings
   vim.api.nvim_set_keymap('n', '-n', ']c', { silent = true })
