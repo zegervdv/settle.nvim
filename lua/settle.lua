@@ -63,13 +63,12 @@ local use_diff = function(diff)
   -- Remove conflict text
   vim.api.nvim_buf_set_extmark(M.merged.buffer, ns_marks, mark[1][2], 0, { id = id, virt_text = {} })
 
-  vim.api.nvim_buf_set_extmark(
-    M.merged.buffer,
-    ns_resolutions,
-    mark[1][2],
-    0,
-    { end_line = mark[1][2] + #lines, id = id, virt_text = { { 'Using ' .. diff, 'Comment' } } }
-  )
+  vim.api.nvim_buf_set_extmark(M.merged.buffer, ns_resolutions, mark[1][2], 0, {
+    end_line = mark[1][2] + #lines,
+    id = id,
+    virt_text = { { 'Using ' .. diff, 'SettleResolution' } },
+    hl_mode = 'combine',
+  })
 end
 
 M.resolve_manual = function(...)
@@ -84,7 +83,7 @@ M.resolve_manual = function(...)
     ns_resolutions,
     mark[1][2],
     0,
-    { id = mark[1][1], virt_text = { { 'Manual', 'Comment' } } }
+    { id = mark[1][1], virt_text = { { 'Manual', 'SettleResolution' } }, hl_mode = 'combine' }
   )
 end
 
@@ -96,6 +95,24 @@ M.use_2 = function()
   return use_diff 'theirs'
 end
 
+local goto_mark = function(pos, marks, message)
+  local next_line = nil
+  -- if current line is first mark, move to second, if exists
+  if marks[1][2] == (pos[1] - 1) then
+    if #marks > 1 then
+      next_line = marks[2][2]
+    end
+  else
+    next_line = marks[1][2]
+  end
+
+  if next_line ~= nil then
+    vim.api.nvim_win_set_cursor(M.merged.window, { next_line + 1, 0 })
+  else
+    vim.notify(message, vim.log.levels.WARN, {})
+  end
+end
+
 M.next_diff = function()
   local pos = vim.api.nvim_win_get_cursor(M.merged.window)
   local mark = vim.api.nvim_buf_get_extmarks(M.merged.buffer, ns_marks, { pos[1] - 1, pos[2] }, -1, {})
@@ -104,21 +121,7 @@ M.next_diff = function()
     return
   end
 
-  local next_line = nil
-  -- if current line is first mark, move to second, if exists
-  if mark[1][2] == (pos[1] - 1) then
-    if #mark > 1 then
-      next_line = mark[2][2]
-    end
-  else
-    next_line = mark[1][2]
-  end
-
-  if next_line ~= nil then
-    vim.api.nvim_win_set_cursor(M.merged.window, { next_line + 1, 0 })
-  else
-    vim.notify('Last conflict in document', vim.log.levels.WARN, {})
-  end
+  goto_mark(pos, mark, 'Already at last conflict in document')
 end
 
 M.prev_diff = function()
@@ -129,21 +132,7 @@ M.prev_diff = function()
     return
   end
 
-  local next_line = nil
-  -- if current line is first mark, move to second, if exists
-  if mark[1][2] == (pos[1] - 1) then
-    if #mark > 1 then
-      next_line = mark[2][2]
-    end
-  else
-    next_line = mark[1][2]
-  end
-
-  if next_line ~= nil then
-    vim.api.nvim_win_set_cursor(M.merged.window, { next_line + 1, 0 })
-  else
-    vim.notify('First conflict in document', vim.log.levels.WARN, {})
-  end
+  goto_mark(pos, mark, 'Already at first conflict in document')
 end
 
 M.close = function()
@@ -233,10 +222,11 @@ M.start = function()
 
   for _, mark in pairs(M.marks) do
     vim.api.nvim_buf_set_extmark(M.merged.buffer, ns_marks, mark.line, 0, {
-      virt_text = { { '< CONFLICT >', 'Error' } },
+      virt_text = { { '< CONFLICT >', 'SettleConflict' } },
       id = mark.id,
       sign_text = M.opts.symbol,
-      sign_hl_group = 'DiagnosticSignError',
+      sign_hl_group = 'SettleSignConflict',
+      hl_mode = 'combine',
     })
   end
 
@@ -255,6 +245,8 @@ M.start = function()
   end
 
   vim.cmd [[ windo diffthis ]]
+
+  goto_mark({ 0, 0 }, M.marks, 'No conflicts in file')
 end
 
 M.setup = function(opts)
@@ -296,6 +288,10 @@ M.setup = function(opts)
     '',
     { silent = true, callback = M.close, desc = 'Save all changes and close' }
   )
+
+  vim.api.nvim_set_hl(0, 'SettleConflict', { default = true, link = 'DiagnosticError' })
+  vim.api.nvim_set_hl(0, 'SettleResolution', { default = true, link = 'Comment' })
+  vim.api.nvim_set_hl(0, 'SettleSignConflict', { default = true, link = 'DiagnosticSignError' })
 end
 
 return M
